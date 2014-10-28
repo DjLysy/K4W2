@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(${K4W2_INCLUDE_DIR})
 # directory containing libraries
 SET(K4W2_LIB_DIR @CMAKE_INSTALL_PREFIX@/lib)
 LINK_DIRECTORIES(${K4W2_LIB_DIR})
+LINK_DIRECTORIES("/home/dkaczmar/liby/libfreenect2/depends/glew/lib64/")
 
 # list of libraries to link against when using features of K4W2
 # add all additional libraries built by this dcl (NOT components)

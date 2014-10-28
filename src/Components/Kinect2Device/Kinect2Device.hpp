@@ -15,9 +15,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <libfreenect2/libfreenect2.hpp>
-#include <libfreenect2/frame_listener_impl.h>
-#include <libfreenect2/threading.h>
+#include <libfreenect2.hpp>
+#include <frame_listener_impl.h>
+#include <threading.h>
 
 
 namespace Processors {
@@ -84,15 +84,16 @@ protected:
 	Base::EventHandler2 h_getDepthMap;
 
 	// Properties
-	Base::Property<Boolean> enable_rgb;
-	Base::Property<Boolean> enable_ir;
-	Base::Property<Boolean> enable_depth;
+    Base::Property<bool> enable_rgb;
+    Base::Property<bool> enable_ir;
+    Base::Property<bool> enable_depth;
 
     // Others
 
+    libfreenect2::Freenect2 *freenect2;
     libfreenect2::Freenect2Device *dev;
-    libfreenect2::SyncMultiFrameListener listener;
-    libfreenect2::FrameMap frames;
+    libfreenect2::SyncMultiFrameListener *listener;
+    libfreenect2::FrameMap *frames;
 
 	// Handlers
 	void getIRImage();

@@ -18,17 +18,36 @@ namespace Kinect2Device {
 Kinect2Device::Kinect2Device(const std::string & name) :
 		Base::Component(name) , 
 		enable_rgb("enable_rgb", 1, "Boolean"), 
-		enable_ir("enable_ir", 1, "Boolean"), 
-        enable_depth("enable_depth", 1, "Boolean"),
-        listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth)
+        enable_ir("enable_ir", 1, "Boolean"),
+        enable_depth("enable_depth", 1, "Boolean")
 {
 	registerProperty(enable_rgb);
 	registerProperty(enable_ir);
 	registerProperty(enable_depth);
 
+    freenect2 = new libfreenect2::Freenect2();
+    dev = freenect2->openDefaultDevice();
+
+
+
+    listener = new libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+    frames = new libfreenect2::FrameMap();
+
+    dev->setColorFrameListener(listener);
+    dev->setIrAndDepthFrameListener(listener);
+    dev->start();
+
+    std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
+    std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
+
 }
 
 Kinect2Device::~Kinect2Device() {
+    dev->stop();
+    dev->close();
+    delete freenect2;
+    delete listener;
+    delete frames;
 }
 
 void Kinect2Device::prepareInterface() {
@@ -47,50 +66,47 @@ void Kinect2Device::prepareInterface() {
 }
 
 bool Kinect2Device::onInit() {
-    libfreenect2::Freenect2 freenect2;
-    dev = freenect2.openDefaultDevice();
     if(dev == 0)
     {
       std::cout << "no device connected or failure opening the default one!" << std::endl;
       return false;
     }
-    dev->setColorFrameListener(&listener);
-    dev->setIrAndDepthFrameListener(&listener);
-
-    std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
-    std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
-	return true;
+    return true;
 }
 
 bool Kinect2Device::onFinish() {
-    dev->close();
 	return true;
 }
 
 bool Kinect2Device::onStop() {
-    dev->stop();
 	return true;
 }
 
 bool Kinect2Device::onStart() {
-    dev->start();
-    listener.waitForNewFrame(frames);
 	return true;
 }
 
 void Kinect2Device::getIRImage() {
-    libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
-    out_ir_image.write(cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
+
 }
 
 void Kinect2Device::getRGBImage() {
-    libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-    out_rgb_image.write(cv::Mat(rgb->height, rgb->width, CV_8UC3, rgb->data));
+    listener->waitForNewFrame(*frames);
+    libfreenect2::Frame *rgb = (*frames)[libfreenect2::Frame::Color];
+    libfreenect2::Frame *ir = (*frames)[libfreenect2::Frame::Ir];
+    libfreenect2::Frame *depth = (*frames)[libfreenect2::Frame::Depth];
+
+    //cv::imshow("rgb", cv::Mat(rgb->height, rgb->width, CV_8UC3, rgb->data));
+    //cv::imshow("ir", cv::Mat(ir->height, ir->width, CV_32FC1, ir->data) / 20000.0f);
+    //cv::imshow("depth", cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f);
+    cv::Mat *rgbImg = new cv::Mat(rgb->height, rgb->width, CV_8UC3, rgb->data);
+    out_rgb_image.write(*rgbImg);
+    listener->release(*frames);
+
 }
 
 void Kinect2Device::getDepthMap() {
-    libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
-    out_depth_map.write(cv::Mat(depth->height, depth->width, CV_32FC1, depth->data) / 4500.0f);
+
 }
 
 
