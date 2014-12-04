@@ -1,0 +1,1 @@
+Kinect2Device	libKinect2Device.so

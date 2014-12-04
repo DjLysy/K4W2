@@ -17,19 +17,24 @@
 	<Subtasks>
 		<Subtask name="Main">
 			<Executor name="Processing" period="0">
-				<Component name="Kinect" type="K4W2:Kinect2Device" priority="2" bump="0">
+				<Component name="Kinect" type="K4W2:Kinect2Device" priority="1" bump="0">
 					<param name="enable_rgb">1</param>
 					<param name="enable_ir">0</param>
 					<param name="enable_depth">0</param>
 				</Component>
-			</Executor>
-		</Subtask>	
 
+			</Executor>
+		</Subtask>			
 		<Subtask name="Display">
-			<Executor name="Display" period="0.1">
-				<Component name="Window" type="CvBasic:CvWindow" priority="1" bump="0">
+			<Executor name="Display" period="1">
+				<Component name="Window" type="CvBasic:CvWindow" priority="1" bump="1">
 					<param name="count">3</param>
 					<param name="title">RGB,IR,DEPTH</param>
+				</Component>
+				<Component name="DepthConventer" type="CvStereo:DepthConventer" priority="2" bump="1">
+				</Component>
+				<Component name="WindowCloud" type="PCL:CloudViewer" priority="3" bump="1">
+					<param name="window_name">Depth Cloud</param>
 				</Component>
 			</Executor>
 		</Subtask>	
@@ -42,9 +47,14 @@
 		</Source>
 		<Source name="Kinect.out_ir_image">
 			<sink>Window.in_img1</sink>
+			<sink>DepthConventer.in_rgb_stereo</sink>
 		</Source>
 		<Source name="Kinect.out_depth_map">
 			<sink>Window.in_img2</sink>
+			<sink>DepthConventer.in_depth_xyz</sink>
+		</Source>
+		<Source name="DepthConventer.out_cloud_xyzrgb">
+			<sink>WindowCloud.in_cloud_xyzrgb</sink>
 		</Source>
 	</DataStreams>
 </Task>

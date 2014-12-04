@@ -6,6 +6,7 @@
 
 #ifndef KINECT2DEVICE_HPP_
 #define KINECT2DEVICE_HPP_
+#define LIBFREENECT2_THREADING_STDLIB
 
 #include "Component_Aux.hpp"
 #include "Component.hpp"
@@ -15,9 +16,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <libfreenect2.hpp>
-#include <frame_listener_impl.h>
-#include <threading.h>
+#include <libfreenect2/libfreenect2.hpp>
+#include <libfreenect2/frame_listener_impl.h>
+#include <libfreenect2/threading.h>
 
 
 namespace Processors {
@@ -79,9 +80,9 @@ protected:
     Base::DataStreamOut<cv::Mat> out_depth_map;
 
 	// Handlers
-	Base::EventHandler2 h_getIRImage;
-	Base::EventHandler2 h_getRGBImage;
-	Base::EventHandler2 h_getDepthMap;
+    Base::EventHandler2 h_getIRImage;
+    Base::EventHandler2 h_getRGBImage;
+    Base::EventHandler2 h_getDepthMap;
 
 	// Properties
     Base::Property<bool> enable_rgb;
@@ -95,10 +96,12 @@ protected:
     libfreenect2::SyncMultiFrameListener *listener;
     libfreenect2::FrameMap *frames;
 
+    //Output Buffers
+
+    cv::Mat imgBuffer, depthBuffer, irBuffer;
+
 	// Handlers
-	void getIRImage();
-	void getRGBImage();
-	void getDepthMap();
+    void getRGBImage();
 
 };
 
