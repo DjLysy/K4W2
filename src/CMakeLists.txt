@@ -19,6 +19,7 @@ FIND_PACKAGE( OpenCV REQUIRED )
 
 # Find another DCLs our one depends on
 # Use macro: DISCODE_FIND_DCL(<DCL_NAME>)
+DISCODE_FIND_DCL(CvCoreTypes)
 
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,defs") 
 

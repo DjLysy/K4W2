@@ -13,6 +13,7 @@
 #include "DataStream.hpp"
 #include "Property.hpp"
 #include "EventHandler2.hpp"
+#include "Types/CameraInfo.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -78,6 +79,8 @@ protected:
     Base::DataStreamOut<cv::Mat> out_rgb_image;
     Base::DataStreamOut<cv::Mat> out_ir_image;
     Base::DataStreamOut<cv::Mat> out_depth_map;
+    Base::DataStreamOut<Types::CameraInfo> out_rgb_CameraInfo;
+    Base::DataStreamOut<Types::CameraInfo> out_ir_CameraInfo;
 
 	// Handlers
     Base::EventHandler2 h_getIRImage;
@@ -102,6 +105,7 @@ protected:
 
 	// Handlers
     void getRGBImage();
+    void getCameraMatrices();
 
 };
 

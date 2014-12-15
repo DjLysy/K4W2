@@ -79,6 +79,51 @@ bool Kinect2Device::onStart() {
 	return true;
 }
 
+void Kinect2Device::getCameraMatrices() {
+    cv::Mat cameraMatrixColor, distortionColor;
+    cv::Mat cameraMatrixIr, distortionIr;
+    cv::Mat rotation, translation;
+
+    Types::CameraInfo rgb_camera_info, ir_camera_info;
+
+    libfreenect2::Freenect2Device::ColorCameraParams colorParams = dev->getColorCameraParams();
+    libfreenect2::Freenect2Device::IrCameraParams    irParams    = dev->getIrCameraParams();
+
+    cameraMatrixColor   = cv::Mat::eye(3, 3, CV_32FC1);
+    distortionColor     = cv::Mat::zeros(1, 5, CV_32FC1);
+    cameraMatrixIr      = cv::Mat::eye(3, 3, CV_32FC1);
+    distortionIr        = cv::Mat::zeros(1, 5, CV_32FC1);
+
+    cameraMatrixColor.at<double>(0, 0) = colorParams.fx;
+    cameraMatrixColor.at<double>(1, 1) = colorParams.fy;
+    cameraMatrixColor.at<double>(0, 2) = colorParams.cx;
+    cameraMatrixColor.at<double>(1, 2) = colorParams.cy;
+    cameraMatrixColor.at<double>(2, 2) = 1;
+
+    cameraMatrixIr.at<double>(0, 0) = irParams.fx;
+    cameraMatrixIr.at<double>(1, 1) = irParams.fy;
+    cameraMatrixIr.at<double>(0, 2) = irParams.cx;
+    cameraMatrixIr.at<double>(1, 2) = irParams.cy;
+    cameraMatrixIr.at<double>(2, 2) = 1;
+
+    distortionIr.at<double>(0, 0) = irParams.k1;
+    distortionIr.at<double>(0, 1) = irParams.k2;
+    distortionIr.at<double>(0, 2) = irParams.p1;
+    distortionIr.at<double>(0, 3) = irParams.p2;
+
+    rotation = cv::Mat::eye(3, 3, CV_64F);
+    translation = cv::Mat::zeros(3, 1, CV_64F);
+
+    rgb_camera_info.setCameraMatrix(cameraMatrixColor);
+    rgb_camera_info.setDistCoeffs(distortionColor);
+
+    ir_camera_info.setCameraMatrix(cameraMatrixIr);
+    ir_camera_info.setDistCoeffs(distortionIr);
+
+    out_ir_CameraInfo.write(ir_camera_info);
+    out_rgb_CameraInfo.write(rgb_camera_info);
+}
+
 void Kinect2Device::getRGBImage() {
     CLOG(LINFO) << "Nowy obraz";
     listener->waitForNewFrame(*frames);
