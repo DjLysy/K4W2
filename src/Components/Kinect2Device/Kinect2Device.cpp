@@ -52,6 +52,8 @@ void Kinect2Device::prepareInterface() {
 	registerStream("out_rgb_image", &out_rgb_image);
 	registerStream("out_ir_image", &out_ir_image);
     registerStream("out_depth_map", &out_depth_map);
+    registerStream("out_rgb_CameraInfo", &out_rgb_CameraInfo);
+    registerStream("out_ir_CameraInfo", &out_ir_CameraInfo);
 	// Register handlers
     //GetImages()
     h_getImages.setup(boost::bind(&Kinect2Device::getImages, this));
@@ -130,8 +132,9 @@ void Kinect2Device::getCameraMatrices() {
 }
 
 void Kinect2Device::getImages() {
+    CLOG(LINFO) << "Czeka na klatki";
     listener->waitForNewFrame(*frames);
-
+    CLOG(LINFO) << "Klatki gotowe";
     libfreenect2::Frame *rgb = (*frames)[libfreenect2::Frame::Color];
     libfreenect2::Frame *ir = (*frames)[libfreenect2::Frame::Ir];
     libfreenect2::Frame *depth = (*frames)[libfreenect2::Frame::Depth];

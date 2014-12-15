@@ -9,7 +9,12 @@ FIND_PACKAGE(DisCODe REQUIRED)
 
 # Use CMake macros provided with DisCODe
 set(CMAKE_MODULE_PATH ${DisCODe_DIR} ${CMAKE_MODULE_PATH})
-set(freenect2_DIR "/home/dkaczmar/lib/lib/cmake/freenect2/")
+
+#Set custom freenect2 path
+IF(NOT DEFINED freenect2_DIR)
+SET(freenect2_DIR "~/lib/lib/cmake/freenect2/")
+ENDIF(NOT DEFINED freenect2_DIR)
+
 include(DisCODeMacros)
 
 # Set default install prefix to dist folder

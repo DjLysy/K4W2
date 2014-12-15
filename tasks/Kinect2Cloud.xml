@@ -28,10 +28,10 @@
 		<Subtask name="Display">
 			<Executor name="Display" period="1">
 				<Component name="Window" type="CvBasic:CvWindow" priority="1" bump="1">
-					<param name="count">3</param>
-					<param name="title">RGB,IR,DEPTH</param>
+					<param name="count">1</param>
+					<param name="title">RGB</param>
 				</Component>
-				<Component name="DepthConventer" type="CvStereo:DepthConventer" priority="2" bump="1">
+				<Component name="DepthConventer" type="PCL:DepthConverter" priority="2" bump="1">
 				</Component>
 				<Component name="WindowCloud" type="PCL:CloudViewer" priority="3" bump="1">
 					<param name="window_name">Depth Cloud</param>
@@ -42,16 +42,17 @@
 	
 	<!-- pipes connecting datastreams -->
 	<DataStreams>
+		<Source name="Kinect.out_ir_CameraInfo">
+			<sink>DepthConventer.in_camera_info</sink>
+		</Source>
 		<Source name="Kinect.out_rgb_image">
 			<sink>Window.in_img0</sink>
 		</Source>
 		<Source name="Kinect.out_ir_image">
-			<sink>Window.in_img1</sink>
-			<sink>DepthConventer.in_rgb_stereo</sink>
+			<sink>DepthConventer.in_color</sink>
 		</Source>
 		<Source name="Kinect.out_depth_map">
-			<sink>Window.in_img2</sink>
-			<sink>DepthConventer.in_depth_xyz</sink>
+			<sink>DepthConventer.in_depth</sink>
 		</Source>
 		<Source name="DepthConventer.out_cloud_xyzrgb">
 			<sink>WindowCloud.in_cloud_xyzrgb</sink>
