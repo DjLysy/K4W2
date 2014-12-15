@@ -53,9 +53,9 @@ void Kinect2Device::prepareInterface() {
 	registerStream("out_ir_image", &out_ir_image);
     registerStream("out_depth_map", &out_depth_map);
 	// Register handlers
-    h_getRGBImage.setup(boost::bind(&Kinect2Device::getRGBImage, this));
-    registerHandler("getRGBImage", &h_getRGBImage);
-    addDependency("getRGBImage",NULL);
+    h_getImages.setup(boost::bind(&Kinect2Device::getImages, this));
+    registerHandler("getImages", &h_getImages);
+    addDependency("getImages",NULL);
 }
 
 bool Kinect2Device::onInit() {
@@ -124,10 +124,9 @@ void Kinect2Device::getCameraMatrices() {
     out_rgb_CameraInfo.write(rgb_camera_info);
 }
 
-void Kinect2Device::getRGBImage() {
-    CLOG(LINFO) << "Nowy obraz";
+void Kinect2Device::getImages() {
     listener->waitForNewFrame(*frames);
-    CLOG(LINFO) << "Mam nowe dane";
+
     libfreenect2::Frame *rgb = (*frames)[libfreenect2::Frame::Color];
     libfreenect2::Frame *ir = (*frames)[libfreenect2::Frame::Ir];
     libfreenect2::Frame *depth = (*frames)[libfreenect2::Frame::Depth];
@@ -138,6 +137,7 @@ void Kinect2Device::getRGBImage() {
     irImg = irImg / 20000.0f;
     depthImg = depthImg / 4500.0f;
 
+    //Copy buffer content to local copies of data to provide asynchronous access to snapshot of data
     rgbImg.copyTo(imgBuffer);
     depthImg.copyTo(depthBuffer);
     irImg.copyTo(irBuffer);
@@ -145,10 +145,8 @@ void Kinect2Device::getRGBImage() {
     out_depth_map.write(imgBuffer);
     out_rgb_image.write(depthBuffer);
     out_ir_image.write(irBuffer);
-    CLOG(LINFO) << "Zapisano na wyściu";
 
     listener->release(*frames);
-
 }
 
 
