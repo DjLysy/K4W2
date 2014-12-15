@@ -80,9 +80,7 @@ protected:
     Base::DataStreamOut<cv::Mat> out_depth_map;
 
 	// Handlers
-    Base::EventHandler2 h_getIRImage;
-    Base::EventHandler2 h_getRGBImage;
-    Base::EventHandler2 h_getDepthMap;
+    Base::EventHandler2 h_getImages;
 
 	// Properties
     Base::Property<bool> enable_rgb;
@@ -101,7 +99,7 @@ protected:
     cv::Mat imgBuffer, depthBuffer, irBuffer;
 
 	// Handlers
-    void getRGBImage();
+    void getImages();
 
 };
 
