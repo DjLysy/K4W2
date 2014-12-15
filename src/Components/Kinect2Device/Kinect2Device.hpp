@@ -84,6 +84,7 @@ protected:
 
 	// Handlers
     Base::EventHandler2 h_getImages;
+    Base::EventHandler2 h_getCameraMatrices;
 
 	// Properties
     Base::Property<bool> enable_rgb;

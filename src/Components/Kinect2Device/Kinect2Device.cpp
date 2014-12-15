@@ -53,9 +53,14 @@ void Kinect2Device::prepareInterface() {
 	registerStream("out_ir_image", &out_ir_image);
     registerStream("out_depth_map", &out_depth_map);
 	// Register handlers
+    //GetImages()
     h_getImages.setup(boost::bind(&Kinect2Device::getImages, this));
     registerHandler("getImages", &h_getImages);
     addDependency("getImages",NULL);
+    //getCameraMatrices()
+    h_getCameraMatrices.setup(boost::bind(&Kinect2Device::getCameraMatrices, this));
+    registerHandler("getCameraMatrices", &h_getCameraMatrices);
+    addDependency("getCameraMatrices",NULL);
 }
 
 bool Kinect2Device::onInit() {
