@@ -15,9 +15,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Warray-bounds -Wtype-limits -Wreturn-ty
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(freenect2 REQUIRED)
 
-#Additional freenect2 dependency
-FIND_LIBRARY(GLEWmx_LIBRARY GLEWmx "${freenect2_INCLUDE_DIR}/../lib64")
-
 IF(OPENMP_FOUND)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 ENDIF()

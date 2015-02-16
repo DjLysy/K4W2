@@ -25,18 +25,6 @@ Kinect2Device::Kinect2Device(const std::string & name) :
 	registerProperty(enable_ir);
     registerProperty(enable_depth);
 
-    freenect2 = new libfreenect2::Freenect2();
-    dev = freenect2->openDefaultDevice();
-
-    listener = new libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-    frames = new libfreenect2::FrameMap();
-
-    dev->setColorFrameListener(listener);
-    dev->setIrAndDepthFrameListener(listener);
-    dev->start();
-
-    std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
-    std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 }
 
 Kinect2Device::~Kinect2Device() {
@@ -52,6 +40,8 @@ void Kinect2Device::prepareInterface() {
 	registerStream("out_rgb_image", &out_rgb_image);
 	registerStream("out_ir_image", &out_ir_image);
     registerStream("out_depth_map", &out_depth_map);
+    registerStream("ir_cameraInfo", &out_ir_CameraInfo);
+    registerStream("rgb_cameraInfo", &out_rgb_CameraInfo);
 	// Register handlers
     //GetImages()
     h_getImages.setup(boost::bind(&Kinect2Device::getImages, this));
@@ -81,6 +71,24 @@ bool Kinect2Device::onStop() {
 }
 
 bool Kinect2Device::onStart() {
+    freenect2 = new libfreenect2::Freenect2();
+    try {
+    dev = freenect2->openDefaultDevice();
+    } catch (...)
+    {
+        return false;
+    }
+    sleep(2);
+
+    listener = new libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+    frames = new libfreenect2::FrameMap();
+
+    dev->setColorFrameListener(listener);
+    dev->setIrAndDepthFrameListener(listener);
+    dev->start();
+    sleep(5);
+    std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
+    std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 	return true;
 }
 
@@ -139,19 +147,19 @@ void Kinect2Device::getImages() {
     cv::Mat rgbImg(rgb->height, rgb->width, CV_8UC3, rgb->data);
     cv::Mat irImg(ir->height, ir->width, CV_32FC1, ir->data);
     cv::Mat depthImg(depth->height, depth->width, CV_32FC1, depth->data);
-    irImg = irImg / 20000.0f;
-    depthImg = depthImg / 4500.0f;
 
     //Copy buffer content to local copies of data to provide asynchronous access to snapshot of data
     rgbImg.copyTo(imgBuffer);
-    depthImg.copyTo(depthBuffer);
-    irImg.copyTo(irBuffer);
+    irImg.convertTo(irBuffer, CV_8UC3, 255.0f / 65535.0f );
+    depthImg.convertTo(depthBuffer, CV_8UC3, 255.0f / 4500.0f );
+
+    listener->release(*frames);
 
     out_depth_map.write(imgBuffer);
     out_rgb_image.write(depthBuffer);
     out_ir_image.write(irBuffer);
 
-    listener->release(*frames);
+    this->getCameraMatrices();
 }
 
 
