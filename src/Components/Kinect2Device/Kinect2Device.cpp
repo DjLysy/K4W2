@@ -96,30 +96,34 @@ void Kinect2Device::getCameraMatrices() {
     libfreenect2::Freenect2Device::ColorCameraParams colorParams = dev->getColorCameraParams();
     libfreenect2::Freenect2Device::IrCameraParams    irParams    = dev->getIrCameraParams();
 
-    cameraMatrixColor   = cv::Mat::eye(3, 3, CV_32FC1);
-    distortionColor     = cv::Mat::zeros(1, 5, CV_32FC1);
-    cameraMatrixIr      = cv::Mat::eye(3, 3, CV_32FC1);
-    distortionIr        = cv::Mat::zeros(1, 5, CV_32FC1);
+    cameraMatrixColor   = cv::Mat::eye(3, 3, CV_32F);
+    distortionColor     = cv::Mat::zeros(1, 5, CV_32F);
+    cameraMatrixIr      = cv::Mat::eye(3, 3, CV_32F);
+    distortionIr        = cv::Mat::zeros(1, 5, CV_32F);
+    CLOG(LINFO) << "before ir_cam_mat= "  << cameraMatrixIr;
+    CLOG(LINFO) << "before rgb_cam_mat= " << cameraMatrixColor;
 
-    cameraMatrixColor.at<double>(0, 0) = colorParams.fx;
-    cameraMatrixColor.at<double>(1, 1) = colorParams.fy;
-    cameraMatrixColor.at<double>(0, 2) = colorParams.cx;
-    cameraMatrixColor.at<double>(1, 2) = colorParams.cy;
-    cameraMatrixColor.at<double>(2, 2) = 1;
+    cameraMatrixColor.at<double>(0, 0) = static_cast<double>(colorParams.fx);
+    cameraMatrixColor.at<double>(1, 1) = static_cast<double>(colorParams.fy);
+    CLOG(LINFO) << "rgb_cam_mat= " << cameraMatrixColor;
+    cameraMatrixColor.at<double>(0, 2) = static_cast<double>(colorParams.cx);
+    cameraMatrixColor.at<double>(1, 2) = static_cast<double>(colorParams.cy);
+    cameraMatrixColor.at<double>(2, 2) = 1.0;
 
-    cameraMatrixIr.at<double>(0, 0) = irParams.fx;
-    cameraMatrixIr.at<double>(1, 1) = irParams.fy;
-    cameraMatrixIr.at<double>(0, 2) = irParams.cx;
-    cameraMatrixIr.at<double>(1, 2) = irParams.cy;
-    cameraMatrixIr.at<double>(2, 2) = 1;
+    cameraMatrixIr.at<double>(0, 0) = static_cast<double>(irParams.fx);
+    cameraMatrixIr.at<double>(1, 1) = static_cast<double>(irParams.fy);
+    CLOG(LINFO) << "ir_cam_mat= "  << cameraMatrixIr;
+    cameraMatrixIr.at<double>(0, 2) = static_cast<double>(irParams.cx);
+    cameraMatrixIr.at<double>(1, 2) = static_cast<double>(irParams.cy);
+    cameraMatrixIr.at<double>(2, 2) = 1.0;
 
-    distortionIr.at<double>(0, 0) = irParams.k1;
-    distortionIr.at<double>(0, 1) = irParams.k2;
-    distortionIr.at<double>(0, 2) = irParams.p1;
-    distortionIr.at<double>(0, 3) = irParams.p2;
+    distortionIr.at<double>(0, 0) = static_cast<double>(irParams.k1);
+    distortionIr.at<double>(0, 1) = static_cast<double>(irParams.k2);
+    distortionIr.at<double>(0, 2) = static_cast<double>(irParams.p1);
+    distortionIr.at<double>(0, 3) = static_cast<double>(irParams.p2);
 
-    rotation = cv::Mat::eye(3, 3, CV_64F);
-    translation = cv::Mat::zeros(3, 1, CV_64F);
+    rotation = cv::Mat::eye(3, 3, CV_32F);
+    translation = cv::Mat::zeros(3, 1, CV_32F);
 
     rgb_camera_info.setCameraMatrix(cameraMatrixColor);
     rgb_camera_info.setDistCoeffs(distortionColor);
@@ -150,8 +154,8 @@ void Kinect2Device::getImages() {
     depthImg.copyTo(depthBuffer);
     irImg.copyTo(irBuffer);
 
-    out_depth_map.write(imgBuffer);
-    out_rgb_image.write(depthBuffer);
+    out_depth_map.write(depthBuffer);
+    out_rgb_image.write(imgBuffer);
     out_ir_image.write(irBuffer);
 
     listener->release(*frames);

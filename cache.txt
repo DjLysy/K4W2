@@ -1,1 +1,2 @@
 Kinect2Device	libKinect2Device.so
+Kinect2Cloud	libKinect2Cloud.so

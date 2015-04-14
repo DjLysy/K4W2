@@ -4,8 +4,8 @@
  * \author Dawid Kaczmarek
  */
 
-#ifndef KINECT2DEVICE_HPP_
-#define KINECT2DEVICE_HPP_
+#ifndef KINECT2CLOUD_HPP_
+#define KINECT2CLOUD_HPP_
 #define LIBFREENECT2_THREADING_STDLIB
 
 #include "Component_Aux.hpp"
@@ -16,31 +16,29 @@
 #include "Types/CameraInfo.hpp"
 
 #include <opencv2/opencv.hpp>
-
-#include <libfreenect2/libfreenect2.hpp>
-#include <libfreenect2/frame_listener_impl.h>
-
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 namespace Processors {
-namespace Kinect2Device {
+namespace Kinect2Cloud {
 
 /*!
- * \class Kinect2Device
- * \brief Kinect2Device processor class.
+ * \class Kinect2Cloud
+ * \brief Kinect2Cloud processor class.
  *
  * Captures RGB and depth data from Kinect for Windows V2 device. Based on libfreenect2 library
  */
-class Kinect2Device: public Base::Component {
+class Kinect2Cloud: public Base::Component {
 public:
 	/*!
 	 * Constructor.
 	 */
-	Kinect2Device(const std::string & name = "Kinect2Device");
+	Kinect2Cloud(const std::string & name = "Kinect2Cloud");
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~Kinect2Device();
+	virtual ~Kinect2Cloud();
 
 	/*!
 	 * Prepare components interface (register streams and handlers).
@@ -73,37 +71,29 @@ protected:
 
 
 	// Input data streams
+    Base::DataStreamIn<cv::Mat> in_rgb_image;
+    Base::DataStreamIn<cv::Mat> in_disparity_image;
+    Base::DataStreamIn<Types::CameraInfo> in_ir_camera_matrix;
+    Base::DataStreamIn<Types::CameraInfo> in_rgb_camera_matrix;
 
 	// Output data streams
+    Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
     Base::DataStreamOut<cv::Mat> out_rgb_image;
-    Base::DataStreamOut<cv::Mat> out_ir_image;
-    Base::DataStreamOut<cv::Mat> out_depth_map;
-    Base::DataStreamOut<Types::CameraInfo> out_rgb_CameraInfo;
-    Base::DataStreamOut<Types::CameraInfo> out_ir_CameraInfo;
+    Base::DataStreamOut<cv::Mat> out_disparity_image;
+
 
 	// Handlers
-    Base::EventHandler2 h_getImages;
-    Base::EventHandler2 h_getCameraMatrices;
+    Base::EventHandler2 h_calculateCloud;
 
 	// Properties
-    Base::Property<bool> enable_rgb;
-    Base::Property<bool> enable_ir;
-    Base::Property<bool> enable_depth;
-
-    // Others
-
-    libfreenect2::Freenect2 *freenect2;
-    libfreenect2::Freenect2Device *dev;
-    libfreenect2::SyncMultiFrameListener *listener;
-    libfreenect2::FrameMap *frames;
+    //Base::Property<bool> enable_rgb;
 
     //Output Buffers
 
     cv::Mat imgBuffer, depthBuffer, irBuffer;
 
 	// Handlers
-    void getImages();
-	void getCameraMatrices();
+    void calculateCloud();
 
 };
 
@@ -113,6 +103,6 @@ protected:
 /*
  * Register processor component.
  */
-REGISTER_COMPONENT("Kinect2Device", Processors::Kinect2Device::Kinect2Device)
+REGISTER_COMPONENT("Kinect2Cloud", Processors::Kinect2Cloud::Kinect2Cloud)
 
-#endif /* KINECT2DEVICE_HPP_ */
+#endif /* KINECT2CLOUD_HPP_ */

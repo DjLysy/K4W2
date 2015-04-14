@@ -7,18 +7,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wuninitialized -Winit-self -Wunused-fun
 # Additional warnings
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Warray-bounds -Wtype-limits -Wreturn-type -Wsequence-point -Wparentheses -Wmissing-braces -Wchar-subscripts -Wswitch -Wwrite-strings -Wenum-compare -Wempty-body -Wlogical-op")
 
+# Find required packages
 
-INCLUDE_DIRECTORIES(include
-    ${freenect2_INCLUDE_DIR}
-)
+FIND_PACKAGE(OpenCV REQUIRED)
 
 # Create a variable containing all .cpp files:
 FILE(GLOB files *.cpp)
 
 # Create an executable file from sources:
-ADD_LIBRARY(Kinect2Device SHARED ${files})
+ADD_LIBRARY(Kinect2Cloud SHARED ${files})
 
 # Link external libraries
-TARGET_LINK_LIBRARIES(Kinect2Device ${DisCODe_LIBRARIES} ${OpenCV_LIBS} ${freenect2_LIBRARIES} ${GLEWmx_LIBRARY})
+TARGET_LINK_LIBRARIES(Kinect2Cloud ${DisCODe_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
-INSTALL_COMPONENT(Kinect2Device)
+INSTALL_COMPONENT(Kinect2Cloud)

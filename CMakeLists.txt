@@ -26,4 +26,13 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 ADD_SUBDIRECTORY(src)
 
+# Display additional files in qtcreator
+execute_process(COMMAND find ${PROJECT_SOURCE_DIR} -type f OUTPUT_VARIABLE FILES_STRING)
+string(REPLACE "\n" ";" FILES_LIST ${FILES_STRING})
+add_custom_target(additional_files_${PROJECT_NAME}
+  SOURCES
+  ${FILES_LIST}
+  ${PROJECT_SOURCE_DIR}/README.md
+)
+
 REBUILD_DCL_CACHE()
