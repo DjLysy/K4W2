@@ -7,6 +7,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wuninitialized -Winit-self -Wunused-fun
 # Additional warnings
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Warray-bounds -Wtype-limits -Wreturn-type -Wsequence-point -Wparentheses -Wmissing-braces -Wchar-subscripts -Wswitch -Wwrite-strings -Wenum-compare -Wempty-body -Wlogical-op")
 
+# Find required packages
+
+FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(freenect2 REQUIRED)
+
 
 INCLUDE_DIRECTORIES(include
     ${freenect2_INCLUDE_DIR}
