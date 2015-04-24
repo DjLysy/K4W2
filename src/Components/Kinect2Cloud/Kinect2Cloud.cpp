@@ -164,11 +164,13 @@ void Kinect2Cloud::calculateCloud() {
     CLOG(LINFO) << "Max d=" << max << ", min d= "<< min;
 
     //TODO: zamienić true na parametr
-    if(true){
+    //if(false){
+    /*
         std::vector<int> indices;
         cloud->is_dense = false;
         pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
-    }
+    */
+    //}
 
     out_cloud_xyzrgb.write(cloud);
     out_rgb_image.write(rgbImage);

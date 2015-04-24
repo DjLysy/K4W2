@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Warray-bounds -Wtype-limits -Wreturn-ty
 # Find required packages
 
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(PCL REQUIRED)
 
 # Create a variable containing all .cpp files:
 FILE(GLOB files *.cpp)
