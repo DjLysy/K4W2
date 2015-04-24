@@ -54,6 +54,14 @@ void Kinect2Device::prepareInterface() {
 }
 
 bool Kinect2Device::onInit() {
+    freenect2 = new libfreenect2::Freenect2();
+    try {
+    dev = freenect2->openDefaultDevice();
+    } catch (...)
+    {
+        return false;
+    }
+
     if(dev == 0)
     {
       std::cout << "no device connected or failure opening the default one!" << std::endl;
@@ -63,33 +71,26 @@ bool Kinect2Device::onInit() {
 }
 
 bool Kinect2Device::onFinish() {
+    dev->close();
 	return true;
 }
 
 bool Kinect2Device::onStop() {
+    dev->stop();
+
 	return true;
 }
 
 bool Kinect2Device::onStart() {
-    freenect2 = new libfreenect2::Freenect2();
-    try {
-    dev = freenect2->openDefaultDevice();
-    } catch (...)
-    {
-        return false;
-    }
-    sleep(2);
-
     listener = new libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
     frames = new libfreenect2::FrameMap();
 
     dev->setColorFrameListener(listener);
     dev->setIrAndDepthFrameListener(listener);
     dev->start();
-    sleep(5);
     std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
     std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
-	return true;
+    return true;
 }
 
 void Kinect2Device::getCameraMatrices() {
@@ -106,27 +107,23 @@ void Kinect2Device::getCameraMatrices() {
     distortionColor     = cv::Mat::zeros(1, 5, CV_32F);
     cameraMatrixIr      = cv::Mat::eye(3, 3, CV_32F);
     distortionIr        = cv::Mat::zeros(1, 5, CV_32F);
-    CLOG(LINFO) << "before ir_cam_mat= "  << cameraMatrixIr;
-    CLOG(LINFO) << "before rgb_cam_mat= " << cameraMatrixColor;
 
-    cameraMatrixColor.at<double>(0, 0) = static_cast<double>(colorParams.fx);
-    cameraMatrixColor.at<double>(1, 1) = static_cast<double>(colorParams.fy);
-    CLOG(LINFO) << "rgb_cam_mat= " << cameraMatrixColor;
-    cameraMatrixColor.at<double>(0, 2) = static_cast<double>(colorParams.cx);
-    cameraMatrixColor.at<double>(1, 2) = static_cast<double>(colorParams.cy);
-    cameraMatrixColor.at<double>(2, 2) = 1.0;
+    cameraMatrixColor.at<float>(0, 0) = colorParams.fx;
+    cameraMatrixColor.at<float>(1, 1) = colorParams.fy;
+    cameraMatrixColor.at<float>(0, 2) = colorParams.cx;
+    cameraMatrixColor.at<float>(1, 2) = colorParams.cy;
+    cameraMatrixColor.at<float>(2, 2) = 1.0;
 
-    cameraMatrixIr.at<double>(0, 0) = static_cast<double>(irParams.fx);
-    cameraMatrixIr.at<double>(1, 1) = static_cast<double>(irParams.fy);
-    CLOG(LINFO) << "ir_cam_mat= "  << cameraMatrixIr;
-    cameraMatrixIr.at<double>(0, 2) = static_cast<double>(irParams.cx);
-    cameraMatrixIr.at<double>(1, 2) = static_cast<double>(irParams.cy);
-    cameraMatrixIr.at<double>(2, 2) = 1.0;
+    cameraMatrixIr.at<float>(0, 0) = irParams.fx;
+    cameraMatrixIr.at<float>(1, 1) = irParams.fy;
+    cameraMatrixIr.at<float>(0, 2) = irParams.cx;
+    cameraMatrixIr.at<float>(1, 2) = irParams.cy;
+    cameraMatrixIr.at<float>(2, 2) = 1.0;
 
-    distortionIr.at<double>(0, 0) = static_cast<double>(irParams.k1);
-    distortionIr.at<double>(0, 1) = static_cast<double>(irParams.k2);
-    distortionIr.at<double>(0, 2) = static_cast<double>(irParams.p1);
-    distortionIr.at<double>(0, 3) = static_cast<double>(irParams.p2);
+    distortionIr.at<float>(0, 0) = irParams.k1;
+    distortionIr.at<float>(0, 1) = irParams.k2;
+    distortionIr.at<float>(0, 2) = irParams.p1;
+    distortionIr.at<float>(0, 3) = irParams.p2;
 
     rotation = cv::Mat::eye(3, 3, CV_32F);
     translation = cv::Mat::zeros(3, 1, CV_32F);
@@ -155,8 +152,10 @@ void Kinect2Device::getImages() {
 
     //Copy buffer content to local copies of data to provide asynchronous access to snapshot of data
     rgbImg.copyTo(imgBuffer);
-    irImg.convertTo(irBuffer, CV_8UC3, 255.0f / 65535.0f );
-    depthImg.convertTo(depthBuffer, CV_8UC3, 255.0f / 4500.0f );
+    //depthImg.copyTo(depthBuffer);
+    //irImg.copyTo(irBuffer);
+    irImg.convertTo(irBuffer, CV_32FC1, 255.0f / 65535.0f );
+    depthImg.convertTo(depthBuffer, CV_32FC1, 255.0f / 4500.0f );
 
     listener->release(*frames);
 
@@ -164,7 +163,7 @@ void Kinect2Device::getImages() {
     out_rgb_image.write(imgBuffer);
     out_ir_image.write(irBuffer);
 
-    this->getCameraMatrices();
+    //this->getCameraMatrices();
 }
 
 

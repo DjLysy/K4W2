@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Dawid Kaczmarek</name>
+			<link></link>
+		</Author>
+	
+		<Description>
+			<brief>Displays color image from Kinect for Windows v2 device</brief>
+			<full>Displays RGB image from Kinect for Windows v2 device. Image has FullHD resolution.</full>
+		</Description>
+	</Reference>
+
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing" period="1">
+                                <Component name="Kinect" type="K4W2:Kinect2Device" priority="1" bump="0">
+					<param name="enable_rgb">1</param>
+					<param name="enable_ir">0</param>
+					<param name="enable_depth">0</param>
+				</Component>
+                                <Component name="Cloud" type="K4W2:Kinect2Cloud" priority="2" bump="0">
+                                </Component>
+			</Executor>
+                </Subtask>
+                <Subtask name="Visualisation">
+                        <Executor name="Exec2" period="0.1">
+                                <Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+                                </Component>
+                                <Component name="Images" type="CvBasic:CvWindow" priority="1" bump="0">
+                                        <param name="count">2</param>
+                                        <param name="title">RGB,DEPTH</param>
+                                </Component>
+                        </Executor>
+                </Subtask>
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+        <DataStreams>
+            <Source name="Kinect.out_ir_image">
+                    <sink>Cloud.in_rgb_image</sink>
+            </Source>
+            <Source name="Kinect.out_depth_map">
+                    <sink>Cloud.in_disparity_image</sink>
+            </Source>
+            <Source name="Kinect.out_rgb_CameraInfo">
+                    <sink>Cloud.in_rgb_camera_matrix</sink>
+            </Source>
+            <Source name="Kinect.out_ir_CameraInfo">
+                    <sink>Cloud.in_ir_camera_matrix</sink>
+            </Source>
+            <Source name="Cloud.out_cloud_xyzrgb">
+                    <sink>Window.in_cloud_xyzrgb</sink>
+            </Source>
+            <Source name="Cloud.out_rgb_image">
+                    <sink>Images.in_img0</sink>
+            </Source>
+            <Source name="Cloud.out_disparity_image">
+                    <sink>Images.in_img1</sink>
+            </Source>
+
+        </DataStreams>
+</Task>
+

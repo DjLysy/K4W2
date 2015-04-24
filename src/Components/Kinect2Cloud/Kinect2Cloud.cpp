@@ -78,63 +78,90 @@ void Kinect2Cloud::calculateCloud() {
     double colsScaleFactor = ((double)bigRgbImage.cols) / ((double)smallDispMap.cols);
     double scaleFactor = std::min(rowsScaleFactor, colsScaleFactor);
 
-    cv::Mat dispMap(bigRgbImage.rows, bigRgbImage.cols, smallDispMap.type());
-
-    cv::resize(smallDispMap, dispMap, cv::Size(0,0), scaleFactor, scaleFactor, cv::INTER_CUBIC);
+    cv::Mat dispMap;//(bigRgbImage.rows, bigRgbImage.cols, smallDispMap.type());
+    if (scaleFactor != 1.0)
+    {
+        cv::Size newDispMapSize(smallDispMap.cols * scaleFactor, smallDispMap.rows * scaleFactor);
+        cv::resize(smallDispMap, dispMap, newDispMapSize);
+    } else
+    {
+        dispMap = smallDispMap;
+    }
 
     //Crop RGB image to disp map scale
     int x_margin = (bigRgbImage.cols - dispMap.cols) / 2;
-    cv::Rect rgbCrop(x_margin, 0, dispMap.cols, dispMap.rows);
-    cv::Mat rgbImage = bigRgbImage(rgbCrop);
-
-    cv::Mat mask = cv::Mat::ones(rgbImage.rows, rgbImage.cols, CV_32FC1);
+    cv::Mat rgbImage;
+    if (x_margin != 0)
+    {
+        cv::Rect rgbCrop(x_margin, 0, dispMap.cols, dispMap.rows);
+        rgbImage = bigRgbImage(rgbCrop);
+    } else
+    {
+        rgbImage = bigRgbImage;
+    }
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>(rgbCamInfo.width(), rgbCamInfo.height()));
 
-    double fx_d =  0.001 / (irCamInfo.fx() * scaleFactor);
-    double fy_d =  0.001 / (irCamInfo.fy() * scaleFactor);
+    double fx_d = 1.0 / (irCamInfo.fx() * scaleFactor);
+    double fy_d = 1.0 / (irCamInfo.fy() * scaleFactor);
     double cx_d = irCamInfo.cx() * scaleFactor;
     double cy_d = irCamInfo.cy() * scaleFactor;
+
     CLOG(LINFO) << "ir_cam_mat= " << irCamInfo.cameraMatrix();
     CLOG(LINFO) << "fx_d=" << fx_d << ", fy_d=" << fy_d << ", cx_d=" << cx_d << ",cy_d=" << cy_d;
 
-
     float bad_point = std::numeric_limits<float>::quiet_NaN();
+    float min = std::numeric_limits<float>::max();
+    float max = std::numeric_limits<float>::min();
 
+    //TODO: błąd z pobieraniem wartości głębii z dispMap
     pcl::PointCloud<pcl::PointXYZRGB>::iterator pt_iter = cloud->begin();
     const uint16_t* depth_row = reinterpret_cast<const uint16_t*>(&dispMap.data[0]);
 
-    int row_step = dispMap.step1();
+    int row_step  = dispMap.step1();
+    CLOG(LINFO) << "Elem size=" << dispMap.elemSize() << ", elemSize1=" << dispMap.elemSize1();
+    //CLOG(LINFO) << "dispMap=" << dispMap;
+
     for (int v = 0; v < (int) cloud->height; ++v, depth_row += row_step) {
         for (int u = 0; u < (int) cloud->width; ++u) {
             pcl::PointXYZRGB& pt = *pt_iter++;
-            uint16_t depth = depth_row[u];
+            float depth = depth_row[u];
 
             // Missing points denoted by NaNs
-            if (depth == 0 || mask.at<float>(v, u)==0) {
+
+            if (/*depth == 0 ||*/ depth == bad_point /*mask.at<float>(v, u)==0*/) {
                 pt.x = pt.y = pt.z = bad_point;
                 continue;
             }
 
+            if (depth > max) max = depth;
+            if (depth < min) min = depth;
+
             // Fill in XYZ
-            pt.x = (u - cx_d) * depth * fx_d;
-            pt.y = (v - cy_d) * depth * fy_d;
-            pt.z = depth * 0.001;
+            pt.x = static_cast<int>((u - cx_d) * depth * fx_d);
+            pt.y = static_cast<int>((v - cy_d) * depth * fy_d);
+            pt.z = static_cast<int>(depth);
 
             // Fill in RGB
-            cv::Vec3b bgr = rgbImage.at<cv::Vec3b>(v, u);
-            int b = bgr[0];
-            int g = bgr[1];
-            int r = bgr[2];
+            int r,g,b;
+            if (rgbImage.type() == CV_32FC1)
+            {
+                r = 255;
+                b = g = rgbImage.at<float>(v, u);
+            } else
+            {
+                cv::Vec3b bgr = rgbImage.at<cv::Vec3b>(v, u);
+                b = bgr[0];
+                g = bgr[1];
+                r = bgr[2];
+            }
             //cout<< b << " " << g << " " << r << endl;// << " " << bgr[1] << " " << bgr[2]<<endl;
-            pt.r = 255;
-            pt.g = 0;
-            pt.b = 0;
-            /*pt.r = r;
+            pt.r = r;
             pt.g = g;
-            pt.b = b;*/
+            pt.b = b;
         }
     }
+    CLOG(LINFO) << "Max d=" << max << ", min d= "<< min;
 
     //TODO: zamienić true na parametr
     if(true){
