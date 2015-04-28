@@ -67,115 +67,84 @@ bool Kinect2Cloud::onStart() {
 
 void Kinect2Cloud::calculateCloud() {
     CLOG(LINFO) << "Getting data";
-    cv::Mat bigRgbImage = in_rgb_image.read();
-    cv::Mat smallDispMap = in_disparity_image.read();
-    Types::CameraInfo rgbCamInfo = in_rgb_camera_matrix.read();
-    Types::CameraInfo irCamInfo = in_ir_camera_matrix.read();
 
-    CLOG(LINFO) << "Rescaling images";
-    //Scale to size of RGB image but with keeping the ratio and data type
-    double rowsScaleFactor = ((double)bigRgbImage.rows) / ((double)smallDispMap.rows);
-    double colsScaleFactor = ((double)bigRgbImage.cols) / ((double)smallDispMap.cols);
-    double scaleFactor = std::min(rowsScaleFactor, colsScaleFactor);
+    color = in_rgb_image.read();
+    depth = in_disparity_image.read();
 
-    cv::Mat dispMap;//(bigRgbImage.rows, bigRgbImage.cols, smallDispMap.type());
-    if (scaleFactor != 1.0)
+    rgbCamInfo = in_rgb_camera_matrix.read();
+    irCamInfo = in_ir_camera_matrix.read();
+
+    cameraMatrixColor = rgbCamInfo.cameraMatrix();
+
+    cloud = pcl::PointCloud<pcl::PointXYZRGBA>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+    cloud->height = color.rows;
+    cloud->width = color.cols;
+    cloud->is_dense = false;
+    cloud->points.resize(cloud->height * cloud->width);
+    createLookup(this->color.cols, this->color.rows);
+
+    createCloud(depth, color, cloud);
+    //TODO: napisać przekształcanie do chmury
+
+    out_cloud_xyzrgb.write(cloud);  
+}
+
+void Kinect2Cloud::createLookup(size_t width, size_t height)
+{
+  const float fx = 1.0f / cameraMatrixColor.at<double>(0, 0);
+  const float fy = 1.0f / cameraMatrixColor.at<double>(1, 1);
+  const float cx = cameraMatrixColor.at<double>(0, 2);
+  const float cy = cameraMatrixColor.at<double>(1, 2);
+  float *it;
+
+  lookupY = cv::Mat(1, height, CV_32F);
+  it = lookupY.ptr<float>();
+  for(size_t r = 0; r < height; ++r, ++it)
+  {
+    *it = (r - cy) * fy;
+  }
+
+  lookupX = cv::Mat(1, width, CV_32F);
+  it = lookupX.ptr<float>();
+  for(size_t c = 0; c < width; ++c, ++it)
+  {
+    *it = (c - cx) * fx;
+  }
+}
+
+void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud) const
+{
+  const float badPoint = std::numeric_limits<float>::quiet_NaN();
+
+  #pragma omp parallel for
+  for(int r = 0; r < depth.rows; ++r)
+  {
+    pcl::PointXYZRGB *itP = &cloud->points[r * depth.cols];
+    const uint16_t *itD = depth.ptr<uint16_t>(r);
+    const cv::Vec3b *itC = color.ptr<cv::Vec3b>(r);
+    const float y = lookupY.at<float>(0, r);
+    const float *itX = lookupX.ptr<float>();
+
+    for(size_t c = 0; c < (size_t)depth.cols; ++c, ++itP, ++itD, ++itC, ++itX)
     {
-        cv::Size newDispMapSize(smallDispMap.cols * scaleFactor, smallDispMap.rows * scaleFactor);
-        cv::resize(smallDispMap, dispMap, newDispMapSize);
-    } else
-    {
-        dispMap = smallDispMap;
+      register const float depthValue = *itD / 1000.0f;
+      // Check for invalid measurements
+      if(isnan(depthValue) || depthValue <= 0.001)
+      {
+        // not valid
+        itP->x = itP->y = itP->z = badPoint;
+        itP->rgba = 0;
+        continue;
+      }
+      itP->z = depthValue;
+      itP->x = *itX * depthValue;
+      itP->y = y * depthValue;
+      itP->b = itC->val[0];
+      itP->g = itC->val[1];
+      itP->r = itC->val[2];
+      //itP->a = 0;
     }
-
-    //Crop RGB image to disp map scale
-    int x_margin = (bigRgbImage.cols - dispMap.cols) / 2;
-    cv::Mat rgbImage;
-    if (x_margin != 0)
-    {
-        cv::Rect rgbCrop(x_margin, 0, dispMap.cols, dispMap.rows);
-        rgbImage = bigRgbImage(rgbCrop);
-    } else
-    {
-        rgbImage = bigRgbImage;
-    }
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>(rgbCamInfo.width(), rgbCamInfo.height()));
-
-    double fx_d = 1.0 / (irCamInfo.fx() * scaleFactor);
-    double fy_d = 1.0 / (irCamInfo.fy() * scaleFactor);
-    double cx_d = irCamInfo.cx() * scaleFactor;
-    double cy_d = irCamInfo.cy() * scaleFactor;
-
-    CLOG(LINFO) << "ir_cam_mat= " << irCamInfo.cameraMatrix();
-    CLOG(LINFO) << "fx_d=" << fx_d << ", fy_d=" << fy_d << ", cx_d=" << cx_d << ",cy_d=" << cy_d;
-
-    float bad_point = std::numeric_limits<float>::quiet_NaN();
-    float min = std::numeric_limits<float>::max();
-    float max = std::numeric_limits<float>::min();
-
-    //TODO: błąd z pobieraniem wartości głębii z dispMap
-    pcl::PointCloud<pcl::PointXYZRGB>::iterator pt_iter = cloud->begin();
-    const uint16_t* depth_row = reinterpret_cast<const uint16_t*>(&dispMap.data[0]);
-
-    int row_step  = dispMap.step1();
-    CLOG(LINFO) << "Elem size=" << dispMap.elemSize() << ", elemSize1=" << dispMap.elemSize1();
-    //CLOG(LINFO) << "dispMap=" << dispMap;
-
-    for (int v = 0; v < (int) cloud->height; ++v, depth_row += row_step) {
-        for (int u = 0; u < (int) cloud->width; ++u) {
-            pcl::PointXYZRGB& pt = *pt_iter++;
-            float depth = depth_row[u];
-
-            // Missing points denoted by NaNs
-
-            if (/*depth == 0 ||*/ depth == bad_point /*mask.at<float>(v, u)==0*/) {
-                pt.x = pt.y = pt.z = bad_point;
-                continue;
-            }
-
-            if (depth > max) max = depth;
-            if (depth < min) min = depth;
-
-            // Fill in XYZ
-            pt.x = static_cast<int>((u - cx_d) * depth * fx_d);
-            pt.y = static_cast<int>((v - cy_d) * depth * fy_d);
-            pt.z = static_cast<int>(depth);
-
-            // Fill in RGB
-            int r,g,b;
-            if (rgbImage.type() == CV_32FC1)
-            {
-                r = 255;
-                b = g = rgbImage.at<float>(v, u);
-            } else
-            {
-                cv::Vec3b bgr = rgbImage.at<cv::Vec3b>(v, u);
-                b = bgr[0];
-                g = bgr[1];
-                r = bgr[2];
-            }
-            //cout<< b << " " << g << " " << r << endl;// << " " << bgr[1] << " " << bgr[2]<<endl;
-            pt.r = r;
-            pt.g = g;
-            pt.b = b;
-        }
-    }
-    CLOG(LINFO) << "Max d=" << max << ", min d= "<< min;
-
-    //TODO: zamienić true na parametr
-    //if(false){
-    /*
-        std::vector<int> indices;
-        cloud->is_dense = false;
-        pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
-    */
-    //}
-
-    out_cloud_xyzrgb.write(cloud);
-    out_rgb_image.write(rgbImage);
-    out_disparity_image.write(dispMap);
-
+  }
 }
 
 

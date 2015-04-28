@@ -88,12 +88,22 @@ protected:
 	// Properties
     //Base::Property<bool> enable_rgb;
 
-    //Output Buffers
+    //Data Buffers
+    cv::Mat color, depth;
+    cv::Mat cameraMatrixColor, cameraMatrixDepth;
+    cv::Mat lookupX, lookupY;
 
-    cv::Mat imgBuffer, depthBuffer, irBuffer;
+    Types::CameraInfo rgbCamInfo;
+    Types::CameraInfo irCamInfo;
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
 
 	// Handlers
     void calculateCloud();
+
+    // Methods
+    void createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud) const;
+    void createLookup(size_t width, size_t height);
 
 };
 
