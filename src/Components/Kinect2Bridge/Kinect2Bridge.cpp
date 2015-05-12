@@ -466,12 +466,14 @@ void Kinect2Bridge::receiveIrDepth()
   }
   //double now = ros::Time::now().toSec();
 
+  irFrame = frames[libfreenect2::Frame::Ir];
+  depthFrame = frames[libfreenect2::Frame::Depth];
 
   ir = cv::Mat(irFrame->height, irFrame->width, CV_32FC1, irFrame->data);
   depth = cv::Mat(depthFrame->height, depthFrame->width, CV_32FC1, depthFrame->data);
 
   frame = frameIrDepth++;
-  lockIrDepth.unlock();
+  //lockIrDepth.unlock();
 
   processIrDepth(ir, irOut, depth, depthOut);
   listenerIrDepth->release(frames);
@@ -506,7 +508,7 @@ void Kinect2Bridge::receiveColor()
   color = cv::Mat(colorFrame->height, colorFrame->width, CV_8UC3, colorFrame->data);
 
   frame = frameColor++;
-  lockColor.unlock();
+  //lockColor.unlock();
 
   processColor(color, colorOut);
 
@@ -569,7 +571,8 @@ void Kinect2Bridge::processIrDepth(const cv::Mat &ir, cv::Mat &irOut, const cv::
     //DEPTH
     depth.convertTo(tempDepth, CV_16U, 1, depthShift);
     cv::flip(tempDepth, tempDepth, 1);
-    cv::remap(tempDepth, depthOut, map1Ir, map2Ir, cv::INTER_NEAREST);
+    depthRegHighRes->registerDepth(tempDepth, depthOut);
+    //cv::remap(tempDepth, depthOut, map1Ir, map2Ir, cv::INTER_NEAREST);
 
 }
 

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Dawid Kaczmarek</name>
+			<link></link>
+		</Author>
+	
+		<Description>
+			<brief>Displays color image from Kinect for Windows v2 device</brief>
+			<full>Displays RGB image from Kinect for Windows v2 device. Image has FullHD resolution.</full>
+		</Description>
+	</Reference>
+
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing" period="1">
+                                <Component name="Kinect" type="K4W2:Kinect2Bridge" priority="1" bump="0">
+					<param name="calib_path">/home/dkaczmar/catkin_kinect/src/iai_kinect2/kinect2_bridge/data/</param>
+				</Component>
+                                <Component name="Cloud" type="K4W2:Kinect2Cloud" priority="1" bump="0">
+                                </Component>
+			</Executor>
+                </Subtask>
+		<Subtask name="View">
+			<Executor name="Display" period="1">
+                                <Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+                                </Component>
+			</Executor>
+                </Subtask>
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+        <DataStreams>
+            <Source name="Kinect.out_rgb_image">
+                    <sink>Cloud.in_rgb_image</sink>
+            </Source>
+            <Source name="Kinect.out_depth_map">
+                    <sink>Cloud.in_disparity_image</sink>
+            </Source>
+            <Source name="Kinect.out_rgb_CameraInfo">
+                    <sink>Cloud.in_rgb_camera_matrix</sink>
+            </Source>
+            <Source name="Kinect.out_ir_CameraInfo">
+                    <sink>Cloud.in_ir_camera_matrix</sink>
+            </Source>
+            <Source name="Cloud.out_cloud_xyzrgb">
+                    <sink>Window.in_cloud_xyzrgb</sink>
+            </Source>
+        </DataStreams>
+</Task>
+

@@ -76,7 +76,7 @@ void Kinect2Cloud::calculateCloud() {
 
     cameraMatrixColor = rgbCamInfo.cameraMatrix();
 
-    cloud = pcl::PointCloud<pcl::PointXYZRGBA>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+    cloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
     cloud->height = color.rows;
     cloud->width = color.cols;
     cloud->is_dense = false;
