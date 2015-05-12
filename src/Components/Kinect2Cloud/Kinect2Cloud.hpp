@@ -79,7 +79,7 @@ protected:
 	// Output data streams
     Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
     Base::DataStreamOut<cv::Mat> out_rgb_image;
-    Base::DataStreamOut<cv::Mat> out_disparity_image;
+    Base::DataStreamOut<cv::Mat> out_xyz_image;
 
 
 	// Handlers
@@ -102,7 +102,7 @@ protected:
     void calculateCloud();
 
     // Methods
-    void createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud) const;
+    void createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, cv::Mat &xyz) const;
     void createLookup(size_t width, size_t height);
 
 };

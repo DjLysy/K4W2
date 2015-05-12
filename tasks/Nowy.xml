@@ -22,6 +22,14 @@
 				</Component>
                                 <Component name="Cloud" type="K4W2:Kinect2Cloud" priority="1" bump="0">
                                 </Component>
+				<Component name="ImageWriter" type="CvBasic:ImageWriter" priority="1" bump="0">
+					<param name="directory">%[TASK_LOCATION]%/../../data/rgbd/</param>
+					<param name="count">2</param>
+					<param name="digits">1</param>
+					<param name="base_name">rgb,depth</param>
+					<param name="format">png,png</param>
+					<param name="mode.auto_trigger">0</param>
+				</Component>
 			</Executor>
                 </Subtask>
 		<Subtask name="View">
@@ -36,6 +44,7 @@
         <DataStreams>
             <Source name="Kinect.out_rgb_image">
                     <sink>Cloud.in_rgb_image</sink>
+	            <sink>ImageWriter.in_img0</sink>
             </Source>
             <Source name="Kinect.out_depth_map">
                     <sink>Cloud.in_disparity_image</sink>
@@ -48,6 +57,9 @@
             </Source>
             <Source name="Cloud.out_cloud_xyzrgb">
                     <sink>Window.in_cloud_xyzrgb</sink>
+            </Source>
+            <Source name="Cloud.out_xyz_image">
+                    <sink>ImageWriter.in_img1</sink>
             </Source>
         </DataStreams>
 </Task>

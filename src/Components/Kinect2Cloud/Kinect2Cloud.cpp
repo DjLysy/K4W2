@@ -36,7 +36,7 @@ void Kinect2Cloud::prepareInterface() {
     registerStream("in_rgb_camera_matrix", &in_rgb_camera_matrix);
     registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
     registerStream("out_rgb_image", &out_rgb_image);
-    registerStream("out_disparity_image", &out_disparity_image);
+    registerStream("out_xyz_image", &out_xyz_image);
 
 
 	// Register handlers
@@ -70,6 +70,7 @@ void Kinect2Cloud::calculateCloud() {
 
     color = in_rgb_image.read();
     depth = in_disparity_image.read();
+    cv::Mat xyz(depth.rows, depth.cols, CV_8UC3);
 
     rgbCamInfo = in_rgb_camera_matrix.read();
     irCamInfo = in_ir_camera_matrix.read();
@@ -83,10 +84,10 @@ void Kinect2Cloud::calculateCloud() {
     cloud->points.resize(cloud->height * cloud->width);
     createLookup(this->color.cols, this->color.rows);
 
-    createCloud(depth, color, cloud);
-    //TODO: napisać przekształcanie do chmury
+    createCloud(depth, color, cloud, xyz);
 
-    out_cloud_xyzrgb.write(cloud);  
+    out_cloud_xyzrgb.write(cloud);
+    out_xyz_image.write(xyz);
 }
 
 void Kinect2Cloud::createLookup(size_t width, size_t height)
@@ -112,7 +113,7 @@ void Kinect2Cloud::createLookup(size_t width, size_t height)
   }
 }
 
-void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud) const
+void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, cv::Mat &xyz) const
 {
   const float badPoint = std::numeric_limits<float>::quiet_NaN();
 
@@ -121,11 +122,12 @@ void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::
   {
     pcl::PointXYZRGB *itP = &cloud->points[r * depth.cols];
     const uint16_t *itD = depth.ptr<uint16_t>(r);
-    const cv::Vec3b *itC = color.ptr<cv::Vec3b>(r);
+          cv::Vec3b *itDo = xyz.ptr<cv::Vec3b>(r);
+    const cv::Vec3b *itC  = color.ptr<cv::Vec3b>(r);
     const float y = lookupY.at<float>(0, r);
     const float *itX = lookupX.ptr<float>();
 
-    for(size_t c = 0; c < (size_t)depth.cols; ++c, ++itP, ++itD, ++itC, ++itX)
+    for(size_t c = 0; c < (size_t)depth.cols; ++c, ++itP, ++itD, ++itDo, ++itC, ++itX)
     {
       register const float depthValue = *itD / 1000.0f;
       // Check for invalid measurements
@@ -133,7 +135,7 @@ void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::
       {
         // not valid
         itP->x = itP->y = itP->z = badPoint;
-        itP->rgba = 0;
+        itP->rgb = 0;
         continue;
       }
       itP->z = depthValue;
@@ -142,6 +144,9 @@ void Kinect2Cloud::createCloud(const cv::Mat &depth, const cv::Mat &color, pcl::
       itP->b = itC->val[0];
       itP->g = itC->val[1];
       itP->r = itC->val[2];
+      itDo->val[0] = static_cast<char>(itP->x);
+      itDo->val[1] = static_cast<char>(itP->y);
+      itDo->val[2] = static_cast<char>(itP->z);
       //itP->a = 0;
     }
   }
